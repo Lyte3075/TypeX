@@ -1,0 +1,38 @@
+name: TypeX
+
+options:
+  bundleIdPrefix: com.typex
+  deploymentTarget:
+    iOS: "17.0"
+
+targets:
+  TypeXApp:
+    type: application
+    platform: iOS
+    sources:
+      - TypeXApp
+      - Shared
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.typex.app
+    info:
+      path: TypeXApp/Info.plist
+      properties:
+        CFBundleDisplayName: TypeX
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+
+  TypeXKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - TypeXKeyboard
+      - Shared
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.typex.app.keyboard
+    info:
+      path: TypeXKeyboard/Info.plist
+      properties:
+        CFBundleDisplayName: TypeX Keyboard
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
