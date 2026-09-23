@@ -190,7 +190,7 @@ struct KeyboardCanvas: View {
         VStack(spacing: store.keyboard.rowSpacing) {
             ForEach(store.keyboard.rows) { row in
                 GeometryReader { geometry in
-                    let unitWidth = unitWidth(for: row, availableWidth: geometry.size.width)
+                    let unitWidth = calculatedUnitWidth(for: row, availableWidth: geometry.size.width)
 
                     HStack(spacing: 0) {
                         ForEach(row.keys) { key in
@@ -224,7 +224,7 @@ struct KeyboardCanvas: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.08)))
     }
 
-    private func unitWidth(for row: TypeXRow, availableWidth: CGFloat) -> CGFloat {
+    private func calculatedUnitWidth(for row: TypeXRow, availableWidth: CGFloat) -> CGFloat {
         let totalWeight = row.keys.reduce(0.0) { total, key in
             total + max(0.4, key.width)
         }
