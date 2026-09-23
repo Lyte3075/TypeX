@@ -163,34 +163,34 @@ struct KeyPanel: View {
             if let selected = store.selectedKey {
                 GroupBox("Key: \(selected.label)") {
                     VStack(alignment: .leading, spacing: 12) {
-                        TextField("Label", text: Binding(get: { store.selectedKey?.label ?? "" }, set: { store.updateSelectedKey { $0.label = $1 } })).textFieldStyle(.roundedBorder)
-                        TextField("Output", text: Binding(get: { store.selectedKey?.output ?? "" }, set: { store.updateSelectedKey { $0.output = $1 } })).textFieldStyle(.roundedBorder)
-                        ActionEditor(title: "Tap action", action: Binding(get: { store.selectedKey?.action ?? .text }, set: { store.updateSelectedKey { $0.action = $1 } }), output: Binding(get: { store.selectedKey?.output ?? "" }, set: { store.updateSelectedKey { $0.output = $1 } }))
+                        TextField("Label", text: Binding(get: { store.selectedKey?.label ?? "" }, set: { value in store.updateSelectedKey { $0.label = value } })).textFieldStyle(.roundedBorder)
+                        TextField("Output", text: Binding(get: { store.selectedKey?.output ?? "" }, set: { value in store.updateSelectedKey { $0.output = value } })).textFieldStyle(.roundedBorder)
+                        ActionEditor(title: "Tap action", action: Binding(get: { store.selectedKey?.action ?? .text }, set: { value in store.updateSelectedKey { $0.action = value } }), output: Binding(get: { store.selectedKey?.output ?? "" }, set: { value in store.updateSelectedKey { $0.output = value } }))
 
                         Divider()
                         Text("Long Press").font(.headline)
                         AlternateActionEditor(
-                            action: Binding(get: { store.selectedKey?.longPressAction }, set: { store.updateSelectedKey { $0.longPressAction = $1 } }),
-                            output: Binding(get: { store.selectedKey?.longPressOutput ?? "" }, set: { store.updateSelectedKey { $0.longPressOutput = $1 } })
+                            action: Binding(get: { store.selectedKey?.longPressAction }, set: { value in store.updateSelectedKey { $0.longPressAction = value } }),
+                            output: Binding(get: { store.selectedKey?.longPressOutput ?? "" }, set: { value in store.updateSelectedKey { $0.longPressOutput = value } })
                         )
 
                         Divider()
                         Text("Swipe Actions").font(.headline)
-                        SwipeActionEditor(direction: "↑", action: Binding(get: { store.selectedKey?.swipeUpAction }, set: { store.updateSelectedKey { $0.swipeUpAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeUpOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeUpOutput = $1 } }))
-                        SwipeActionEditor(direction: "↓", action: Binding(get: { store.selectedKey?.swipeDownAction }, set: { store.updateSelectedKey { $0.swipeDownAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeDownOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeDownOutput = $1 } }))
-                        SwipeActionEditor(direction: "←", action: Binding(get: { store.selectedKey?.swipeLeftAction }, set: { store.updateSelectedKey { $0.swipeLeftAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeLeftOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeLeftAction = $1 } }))
-                        SwipeActionEditor(direction: "→", action: Binding(get: { store.selectedKey?.swipeRightAction }, set: { store.updateSelectedKey { $0.swipeRightAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeRightOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeRightOutput = $1 } }))
+                        SwipeActionEditor(direction: "↑", action: Binding(get: { store.selectedKey?.swipeUpAction }, set: { value in store.updateSelectedKey { $0.swipeUpAction = value } }), output: Binding(get: { store.selectedKey?.swipeUpOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeUpOutput = value } }))
+                        SwipeActionEditor(direction: "↓", action: Binding(get: { store.selectedKey?.swipeDownAction }, set: { value in store.updateSelectedKey { $0.swipeDownAction = value } }), output: Binding(get: { store.selectedKey?.swipeDownOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeDownOutput = value } }))
+                        SwipeActionEditor(direction: "←", action: Binding(get: { store.selectedKey?.swipeLeftAction }, set: { value in store.updateSelectedKey { $0.swipeLeftAction = value } }), output: Binding(get: { store.selectedKey?.swipeLeftOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeLeftOutput = value } }))
+                        SwipeActionEditor(direction: "→", action: Binding(get: { store.selectedKey?.swipeRightAction }, set: { value in store.updateSelectedKey { $0.swipeRightAction = value } }), output: Binding(get: { store.selectedKey?.swipeRightOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeRightOutput = value } }))
 
                         Divider()
-                        SliderRow(title: "Width", value: Binding(get: { store.selectedKey?.width ?? 1 }, set: { store.updateSelectedKey { $0.width = $1 } }), range: 0.4...8)
-                        SliderRow(title: "Height", value: Binding(get: { store.selectedKey?.height ?? 1 }, set: { store.updateSelectedKey { $0.height = $1 } }), range: 0.5...3)
-                        SliderRow(title: "Corner radius", value: Binding(get: { store.selectedKey?.cornerRadius ?? 10 }, set: { store.updateSelectedKey { $0.cornerRadius = $1 } }), range: 0...35)
-                        SliderRow(title: "Font size", value: Binding(get: { store.selectedKey?.fontSize ?? 16 }, set: { store.updateSelectedKey { $0.fontSize = $1 } }), range: 8...40)
-                        ColorRow(title: "Background", hex: Binding(get: { store.selectedKey?.backgroundHex ?? "#171724" }, set: { store.updateSelectedKey { $0.backgroundHex = $1 } }))
-                        ColorRow(title: "Text", hex: Binding(get: { store.selectedKey?.foregroundHex ?? "#FFFFFF" }, set: { store.updateSelectedKey { $0.foregroundHex = $1 } }))
-                        ColorRow(title: "Pressed", hex: Binding(get: { store.selectedKey?.pressedHex ?? "#635BFF" }, set: { store.updateSelectedKey { $0.pressedHex = $1 } }))
-                        Toggle("Haptic feedback", isOn: Binding(get: { store.selectedKey?.haptic ?? true }, set: { store.updateSelectedKey { $0.haptic = $1 } }))
-                        Toggle("Key sound", isOn: Binding(get: { store.selectedKey?.sound ?? true }, set: { store.updateSelectedKey { $0.sound = $1 } }))
+                        SliderRow(title: "Width", value: Binding(get: { store.selectedKey?.width ?? 1 }, set: { value in store.updateSelectedKey { $0.width = value } }), range: 0.4...8)
+                        SliderRow(title: "Height", value: Binding(get: { store.selectedKey?.height ?? 1 }, set: { value in store.updateSelectedKey { $0.height = value } }), range: 0.5...3)
+                        SliderRow(title: "Corner radius", value: Binding(get: { store.selectedKey?.cornerRadius ?? 10 }, set: { value in store.updateSelectedKey { $0.cornerRadius = value } }), range: 0...35)
+                        SliderRow(title: "Font size", value: Binding(get: { store.selectedKey?.fontSize ?? 16 }, set: { value in store.updateSelectedKey { $0.fontSize = value } }), range: 8...40)
+                        ColorRow(title: "Background", hex: Binding(get: { store.selectedKey?.backgroundHex ?? "#171724" }, set: { value in store.updateSelectedKey { $0.backgroundHex = value } }))
+                        ColorRow(title: "Text", hex: Binding(get: { store.selectedKey?.foregroundHex ?? "#FFFFFF" }, set: { value in store.updateSelectedKey { $0.foregroundHex = value } }))
+                        ColorRow(title: "Pressed", hex: Binding(get: { store.selectedKey?.pressedHex ?? "#635BFF" }, set: { value in store.updateSelectedKey { $0.pressedHex = value } }))
+                        Toggle("Haptic feedback", isOn: Binding(get: { store.selectedKey?.haptic ?? true }, set: { value in store.updateSelectedKey { $0.haptic = value } }))
+                        Toggle("Key sound", isOn: Binding(get: { store.selectedKey?.sound ?? true }, set: { value in store.updateSelectedKey { $0.sound = value } }))
 
                         HStack {
                             Button("Duplicate") { store.duplicateKey(selected.id) }.buttonStyle(.bordered)
