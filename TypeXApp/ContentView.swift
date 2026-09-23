@@ -16,9 +16,7 @@ struct ContentView: View {
                     .padding(.top, 10)
 
                 Picker("Editor", selection: $section) {
-                    ForEach(DesignerSection.allCases) { s in
-                        Text(s.title).tag(s)
-                    }
+                    ForEach(DesignerSection.allCases) { s in Text(s.title).tag(s) }
                 }
                 .pickerStyle(.segmented)
                 .padding(12)
@@ -37,9 +35,7 @@ struct ContentView: View {
                             showExporter = true
                         }
                         Button("Import JSON") { showImporter = true }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
+                    } label: { Image(systemName: "ellipsis.circle") }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Text(store.keyboard.name).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
@@ -75,7 +71,6 @@ enum DesignerSection: String, CaseIterable, Identifiable {
 
 struct KeyboardCanvas: View {
     @ObservedObject var store: TypeXDesignerStore
-
     var body: some View {
         VStack(spacing: store.keyboard.rowSpacing) {
             ForEach(store.keyboard.rows) { row in
@@ -164,14 +159,29 @@ struct KeyPanel: View {
                     }
                 }
             }
+
             if let selected = store.selectedKey {
                 GroupBox("Key: \(selected.label)") {
                     VStack(alignment: .leading, spacing: 12) {
                         TextField("Label", text: Binding(get: { store.selectedKey?.label ?? "" }, set: { store.updateSelectedKey { $0.label = $1 } })).textFieldStyle(.roundedBorder)
                         TextField("Output", text: Binding(get: { store.selectedKey?.output ?? "" }, set: { store.updateSelectedKey { $0.output = $1 } })).textFieldStyle(.roundedBorder)
-                        Picker("Action", selection: Binding(get: { store.selectedKey?.action ?? .text }, set: { store.updateSelectedKey { $0.action = $1 } })) {
-                            ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
-                        }
+                        ActionEditor(title: "Tap action", action: Binding(get: { store.selectedKey?.action ?? .text }, set: { store.updateSelectedKey { $0.action = $1 } }), output: Binding(get: { store.selectedKey?.output ?? "" }, set: { store.updateSelectedKey { $0.output = $1 } }))
+
+                        Divider()
+                        Text("Long Press").font(.headline)
+                        AlternateActionEditor(
+                            action: Binding(get: { store.selectedKey?.longPressAction }, set: { store.updateSelectedKey { $0.longPressAction = $1 } }),
+                            output: Binding(get: { store.selectedKey?.longPressOutput ?? "" }, set: { store.updateSelectedKey { $0.longPressOutput = $1 } })
+                        )
+
+                        Divider()
+                        Text("Swipe Actions").font(.headline)
+                        SwipeActionEditor(direction: "↑", action: Binding(get: { store.selectedKey?.swipeUpAction }, set: { store.updateSelectedKey { $0.swipeUpAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeUpOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeUpOutput = $1 } }))
+                        SwipeActionEditor(direction: "↓", action: Binding(get: { store.selectedKey?.swipeDownAction }, set: { store.updateSelectedKey { $0.swipeDownAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeDownOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeDownOutput = $1 } }))
+                        SwipeActionEditor(direction: "←", action: Binding(get: { store.selectedKey?.swipeLeftAction }, set: { store.updateSelectedKey { $0.swipeLeftAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeLeftOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeLeftAction = $1 } }))
+                        SwipeActionEditor(direction: "→", action: Binding(get: { store.selectedKey?.swipeRightAction }, set: { store.updateSelectedKey { $0.swipeRightAction = $1 } }), output: Binding(get: { store.selectedKey?.swipeRightOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeRightOutput = $1 } }))
+
+                        Divider()
                         SliderRow(title: "Width", value: Binding(get: { store.selectedKey?.width ?? 1 }, set: { store.updateSelectedKey { $0.width = $1 } }), range: 0.4...8)
                         SliderRow(title: "Height", value: Binding(get: { store.selectedKey?.height ?? 1 }, set: { store.updateSelectedKey { $0.height = $1 } }), range: 0.5...3)
                         SliderRow(title: "Corner radius", value: Binding(get: { store.selectedKey?.cornerRadius ?? 10 }, set: { store.updateSelectedKey { $0.cornerRadius = $1 } }), range: 0...35)
@@ -181,12 +191,7 @@ struct KeyPanel: View {
                         ColorRow(title: "Pressed", hex: Binding(get: { store.selectedKey?.pressedHex ?? "#635BFF" }, set: { store.updateSelectedKey { $0.pressedHex = $1 } }))
                         Toggle("Haptic feedback", isOn: Binding(get: { store.selectedKey?.haptic ?? true }, set: { store.updateSelectedKey { $0.haptic = $1 } }))
                         Toggle("Key sound", isOn: Binding(get: { store.selectedKey?.sound ?? true }, set: { store.updateSelectedKey { $0.sound = $1 } }))
-                        TextField("Long-press output", text: Binding(get: { store.selectedKey?.longPressOutput ?? "" }, set: { store.updateSelectedKey { $0.longPressOutput = $1 } })).textFieldStyle(.roundedBorder)
-                        Text("Swipe outputs").font(.headline)
-                        SwipeField(title: "↑", value: Binding(get: { store.selectedKey?.swipeUpOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeUpOutput = $1 } }))
-                        SwipeField(title: "↓", value: Binding(get: { store.selectedKey?.swipeDownOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeDownOutput = $1 } }))
-                        SwipeField(title: "←", value: Binding(get: { store.selectedKey?.swipeLeftOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeLeftOutput = $1 } }))
-                        SwipeField(title: "→", value: Binding(get: { store.selectedKey?.swipeRightOutput ?? "" }, set: { store.updateSelectedKey { $0.swipeRightOutput = $1 } }))
+
                         HStack {
                             Button("Duplicate") { store.duplicateKey(selected.id) }.buttonStyle(.bordered)
                             Button("Delete", role: .destructive) { store.deleteKey(selected.id) }.buttonStyle(.bordered)
@@ -195,6 +200,63 @@ struct KeyPanel: View {
                 }
             } else {
                 ContentUnavailableView("No key selected", systemImage: "keyboard", description: Text("Tap a key in the preview to edit it."))
+            }
+        }
+    }
+}
+
+struct ActionEditor: View {
+    let title: String
+    @Binding var action: KeyAction
+    @Binding var output: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.subheadline.weight(.semibold))
+            Picker("Action", selection: $action) {
+                ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
+            }
+            if action == .text || action == .custom || action == .numbers || action == .symbols {
+                TextField("Text to insert", text: $output).textFieldStyle(.roundedBorder)
+            }
+        }
+    }
+}
+
+struct AlternateActionEditor: View {
+    @Binding var action: KeyAction?
+    @Binding var output: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle("Enabled", isOn: Binding(get: { action != nil }, set: { enabled in action = enabled ? .text : nil }))
+            if let actionBinding = Binding($action) {
+                Picker("Action", selection: actionBinding) {
+                    ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
+                }
+                if actionBinding.wrappedValue == .text || actionBinding.wrappedValue == .custom || actionBinding.wrappedValue == .numbers || actionBinding.wrappedValue == .symbols {
+                    TextField("Text to insert", text: $output).textFieldStyle(.roundedBorder)
+                }
+            }
+        }
+    }
+}
+
+struct SwipeActionEditor: View {
+    let direction: String
+    @Binding var action: KeyAction?
+    @Binding var output: String
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(direction).font(.title3).frame(width: 28)
+            VStack(alignment: .leading, spacing: 5) {
+                Toggle("Enabled", isOn: Binding(get: { action != nil }, set: { enabled in action = enabled ? .text : nil }))
+                if let actionBinding = Binding($action) {
+                    Picker("Action", selection: actionBinding) {
+                        ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
+                    }
+                    if actionBinding.wrappedValue == .text || actionBinding.wrappedValue == .custom || actionBinding.wrappedValue == .numbers || actionBinding.wrappedValue == .symbols {
+                        TextField("Text to insert", text: $output).textFieldStyle(.roundedBorder)
+                    }
+                }
             }
         }
     }
@@ -211,8 +273,6 @@ struct BehaviorPanel: View {
                 Toggle("Double-space period", isOn: $store.keyboard.doubleSpacePeriod)
                 Toggle("Smart quotes", isOn: $store.keyboard.smartQuotes)
                 Toggle("Smart dashes", isOn: $store.keyboard.smartDashes)
-                Text("Advanced text features will be connected to the native keyboard extension next.")
-                    .font(.footnote).foregroundStyle(.secondary)
             }
         }
     }
@@ -289,17 +349,6 @@ struct SliderRow: View {
     }
 }
 
-struct SwipeField: View {
-    let title: String
-    @Binding var value: String
-    var body: some View {
-        HStack {
-            Text(title).frame(width: 24)
-            TextField("output", text: $value).textFieldStyle(.roundedBorder)
-        }
-    }
-}
-
 struct TypeXExportDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
     var text: String
@@ -317,11 +366,7 @@ extension Color {
         let cleaned = hex.replacingOccurrences(of: "#", with: "")
         var value: UInt64 = 0
         Scanner(string: cleaned).scanHexInt64(&value)
-        self.init(
-            red: Double((value >> 16) & 0xFF) / 255,
-            green: Double((value >> 8) & 0xFF) / 255,
-            blue: Double(value & 0xFF) / 255
-        )
+        self.init(red: Double((value >> 16) & 0xFF) / 255, green: Double((value >> 8) & 0xFF) / 255, blue: Double(value & 0xFF) / 255)
     }
 }
 
