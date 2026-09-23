@@ -18,10 +18,13 @@ targets:
     sources:
       - TypeXApp
       - Shared
+    resources:
+      - TypeXApp/Assets.xcassets
     dependencies:
       - target: TypeXKeyboard
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.typex.app
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       INFOPLIST_FILE: TypeXApp/Info.plist
     info:
       path: TypeXApp/Info.plist
