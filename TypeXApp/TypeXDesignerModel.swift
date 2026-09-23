@@ -142,9 +142,37 @@ final class TypeXDesignerStore: ObservableObject {
     }
 
     func deleteRow(_ id: UUID) {
-        keyboard.rows.removeAll { $0.id != id }
-        if keyboard.rows.isEmpty { addRow() }
-        selectedKeyID = nil
+        guard keyboard.rows.count > 1 else { return }
+        keyboard.rows.removeAll { $0.id == id }
+        if let selected = selectedKeyID, !keyboard.rows.flatMap(\\.keys).contains(where: { $0.id == selected }) {
+            selectedKeyID = nil
+        }
+    }
+
+    func moveRow(_ id: UUID, offset: Int) {
+        guard let index = keyboard.rows.firstIndex(where: { $0.id == id }) else { return }
+        let destination = index + offset
+        guard keyboard.rows.indices.contains(destination) else { return }
+        let row = keyboard.rows.remove(at: index)
+        keyboard.rows.insert(row, at: destination)
+    }
+
+    func moveKey(_ id: UUID, offset: Int) {
+        guard let rowIndex = keyboard.rows.firstIndex(where: { $0.keys.contains(where: { $0.id == id }) }),
+              let keyIndex = keyboard.rows[rowIndex].keys.firstIndex(where: { $0.id == id }) else { return }
+        let destination = keyIndex + offset
+        guard keyboard.rows[rowIndex].keys.indices.contains(destination) else { return }
+        let key = keyboard.rows[rowIndex].keys.remove(at: keyIndex)
+        keyboard.rows[rowIndex].keys.insert(key, at: destination)
+    }
+
+    func moveKey(_ id: UUID, toRow offset: Int) {
+        guard let rowIndex = keyboard.rows.firstIndex(where: { $0.keys.contains(where: { $0.id == id }) }),
+              let keyIndex = keyboard.rows[rowIndex].keys.firstIndex(where: { $0.id == id }) else { return }
+        let destinationRow = rowIndex + offset
+        guard keyboard.rows.indices.contains(destinationRow) else { return }
+        let key = keyboard.rows[rowIndex].keys.remove(at: keyIndex)
+        keyboard.rows[destinationRow].keys.append(key)
     }
 
     func addKey(to rowID: UUID) {
