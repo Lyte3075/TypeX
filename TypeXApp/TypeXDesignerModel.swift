@@ -7,6 +7,8 @@ struct TypeXKey: Identifiable, Codable, Equatable {
     var output: String
     var width: Double = 1.0
     var height: Double = 1.0
+    var horizontalSpacing: Double = 0.0
+    var verticalSpacing: Double = 0.0
     var cornerRadius: Double = 10
     var fontSize: Double = 16
     var fontWeight: Int = 600
