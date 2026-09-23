@@ -190,12 +190,7 @@ struct KeyboardCanvas: View {
         VStack(spacing: store.keyboard.rowSpacing) {
             ForEach(store.keyboard.rows) { row in
                 GeometryReader { geometry in
-                    let totalWeight = max(0.1, row.keys.reduce(0) { $0 + max(0.4, $1.width) })
-                    let totalMargins = row.keys.reduce(0.0) {
-                        $0 + store.keyboard.keySpacing + $1.horizontalSpacing * 2
-                    }
-                    let availableWidth = max(1, geometry.size.width - totalMargins)
-                    let unitWidth = availableWidth / totalWeight
+                    let unitWidth = unitWidth(for: row, availableWidth: geometry.size.width)
 
                     HStack(spacing: 0) {
                         ForEach(row.keys) { key in
@@ -227,6 +222,16 @@ struct KeyboardCanvas: View {
         .background(Color(hex: store.keyboard.backgroundHex).opacity(store.keyboard.opacity))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.08)))
+    }
+
+    private func unitWidth(for row: TypeXRow, availableWidth: CGFloat) -> CGFloat {
+        let totalWeight = row.keys.reduce(0.0) { total, key in
+            total + max(0.4, key.width)
+        }
+        let totalMargins = row.keys.reduce(0.0) { total, key in
+            total + store.keyboard.keySpacing + key.horizontalSpacing * 2
+        }
+        return max(1, availableWidth - totalMargins) / max(0.1, totalWeight)
     }
 }
 
