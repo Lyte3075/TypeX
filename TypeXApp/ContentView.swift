@@ -250,9 +250,10 @@ struct LayoutPanel: View {
                     ForEach(store.keyboard.rows) { row in
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Row • (row.keys.count) keys")
+                                Text("Row • \(row.keys.count) keys")
                                     .font(.subheadline.weight(.semibold))
                                 Spacer()
+
                                 Button { store.moveRow(row.id, offset: -1) } label: {
                                     Image(systemName: "arrow.up")
                                 }
@@ -287,12 +288,14 @@ struct LayoutPanel: View {
                                             } label: {
                                                 Image(systemName: "chevron.left")
                                             }
+                                            .disabled(row.keys.first?.id == key.id)
 
                                             Button {
                                                 store.moveKey(key.id, offset: 1)
                                             } label: {
                                                 Image(systemName: "chevron.right")
                                             }
+                                            .disabled(row.keys.last?.id == key.id)
                                         }
                                     }
                                 }
@@ -313,125 +316,114 @@ struct LayoutPanel: View {
 
 struct KeyPanel: View {
     @ObservedObject var store: TypeXDesignerStore
-
-    private var selectedKeyIndex: (row: Int, key: Int)? {
-        guard let id = store.selectedKeyID else { return nil }
-        for rowIndex in store.keyboard.rows.indices {
-            if let keyIndex = store.keyboard.rows[rowIndex].keys.firstIndex(where: { $0.id == id }) {
-                return (rowIndex, keyIndex)
-            }
-        }
-        return nil
-    }
-
     var body: some View {
         VStack(spacing: 12) {
             GroupBox("Keys") {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
-                        ForEach(store.keyboard.rows.flatMap(\\.keys)) { key in
-                            Button(key.label) {
-                                store.selectedKeyID = key.id
-                            }
-                            .buttonStyle(.bordered)
+                        ForEach(store.keyboard.rows.flatMap(\.keys)) { key in
+                            Button(key.label) { store.selectedKeyID = key.id }.buttonStyle(.bordered)
                         }
                     }
                 }
             }
 
-            if let location = selectedKeyIndex {
-                KeyEditor(store: store, rowIndex: location.row, keyIndex: location.key)
+            if let selected = store.selectedKey {
+                GroupBox("Key: \(selected.label)") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        TextField("Label", text: Binding(get: { store.selectedKey?.label ?? "" }, set: { value in store.updateSelectedKey { $0.label = value } })).textFieldStyle(.roundedBorder)
+                        TextField("Output", text: Binding(get: { store.selectedKey?.output ?? "" }, set: { value in store.updateSelectedKey { $0.output = value } })).textFieldStyle(.roundedBorder)
+                        ActionEditor(title: "Tap action", action: Binding(get: { store.selectedKey?.action ?? .text }, set: { value in store.updateSelectedKey { $0.action = value } }), output: Binding(get: { store.selectedKey?.output ?? "" }, set: { value in store.updateSelectedKey { $0.output = value } }))
+
+                        Divider()
+                        Text("Long Press").font(.headline)
+                        AlternateActionEditor(
+                            action: Binding(get: { store.selectedKey?.longPressAction }, set: { value in store.updateSelectedKey { $0.longPressAction = value } }),
+                            output: Binding(get: { store.selectedKey?.longPressOutput ?? "" }, set: { value in store.updateSelectedKey { $0.longPressOutput = value } })
+                        )
+
+                        Divider()
+                        Text("Swipe Actions").font(.headline)
+                        SwipeActionEditor(direction: "↑", action: Binding(get: { store.selectedKey?.swipeUpAction }, set: { value in store.updateSelectedKey { $0.swipeUpAction = value } }), output: Binding(get: { store.selectedKey?.swipeUpOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeUpOutput = value } }))
+                        SwipeActionEditor(direction: "↓", action: Binding(get: { store.selectedKey?.swipeDownAction }, set: { value in store.updateSelectedKey { $0.swipeDownAction = value } }), output: Binding(get: { store.selectedKey?.swipeDownOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeDownOutput = value } }))
+                        SwipeActionEditor(direction: "←", action: Binding(get: { store.selectedKey?.swipeLeftAction }, set: { value in store.updateSelectedKey { $0.swipeLeftAction = value } }), output: Binding(get: { store.selectedKey?.swipeLeftOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeLeftOutput = value } }))
+                        SwipeActionEditor(direction: "→", action: Binding(get: { store.selectedKey?.swipeRightAction }, set: { value in store.updateSelectedKey { $0.swipeRightAction = value } }), output: Binding(get: { store.selectedKey?.swipeRightOutput ?? "" }, set: { value in store.updateSelectedKey { $0.swipeRightOutput = value } }))
+
+                        Divider()
+                        SliderRow(title: "Width", value: Binding(get: { store.selectedKey?.width ?? 1 }, set: { value in store.updateSelectedKey { $0.width = value } }), range: 0.4...8)
+                        SliderRow(title: "Height", value: Binding(get: { store.selectedKey?.height ?? 1 }, set: { value in store.updateSelectedKey { $0.height = value } }), range: 0.5...3)
+                        SliderRow(title: "Corner radius", value: Binding(get: { store.selectedKey?.cornerRadius ?? 10 }, set: { value in store.updateSelectedKey { $0.cornerRadius = value } }), range: 0...35)
+                        SliderRow(title: "Font size", value: Binding(get: { store.selectedKey?.fontSize ?? 16 }, set: { value in store.updateSelectedKey { $0.fontSize = value } }), range: 8...40)
+                        ColorRow(title: "Background", hex: Binding(get: { store.selectedKey?.backgroundHex ?? "#171724" }, set: { value in store.updateSelectedKey { $0.backgroundHex = value } }))
+                        ColorRow(title: "Text", hex: Binding(get: { store.selectedKey?.foregroundHex ?? "#FFFFFF" }, set: { value in store.updateSelectedKey { $0.foregroundHex = value } }))
+                        ColorRow(title: "Pressed", hex: Binding(get: { store.selectedKey?.pressedHex ?? "#635BFF" }, set: { value in store.updateSelectedKey { $0.pressedHex = value } }))
+                        Toggle("Haptic feedback", isOn: Binding(get: { store.selectedKey?.haptic ?? true }, set: { value in store.updateSelectedKey { $0.haptic = value } }))
+                        Toggle("Key sound", isOn: Binding(get: { store.selectedKey?.sound ?? true }, set: { value in store.updateSelectedKey { $0.sound = value } }))
+
+                        HStack {
+                            Button("Duplicate") { store.duplicateKey(selected.id) }.buttonStyle(.bordered)
+                            Button("Delete", role: .destructive) { store.deleteKey(selected.id) }.buttonStyle(.bordered)
+                        }
+                    }
+                }
             } else {
-                ContentUnavailableView(
-                    "No key selected",
-                    systemImage: "keyboard",
-                    description: Text("Tap a key in the preview to edit it.")
-                )
+                ContentUnavailableView("No key selected", systemImage: "keyboard", description: Text("Tap a key in the preview to edit it."))
             }
         }
     }
 }
 
-struct KeyEditor: View {
-    @ObservedObject var store: TypeXDesignerStore
-    let rowIndex: Int
-    let keyIndex: Int
-
-    private var key: TypeXKey {
-        store.keyboard.rows[rowIndex].keys[keyIndex]
-    }
-
-    private func binding<T>(_ keyPath: WritableKeyPath<TypeXKey, T>) -> Binding<T> {
-        Binding(
-            get: {
-                guard store.keyboard.rows.indices.contains(rowIndex),
-                      store.keyboard.rows[rowIndex].keys.indices.contains(keyIndex) else {
-                    return key[keyPath: keyPath]
-                }
-                return store.keyboard.rows[rowIndex].keys[keyIndex][keyPath: keyPath]
-            },
-            set: { value in
-                guard store.keyboard.rows.indices.contains(rowIndex),
-                      store.keyboard.rows[rowIndex].keys.indices.contains(keyIndex) else { return }
-                store.keyboard.rows[rowIndex].keys[keyIndex][keyPath: keyPath] = value
-            }
-        )
-    }
-
+struct ActionEditor: View {
+    let title: String
+    @Binding var action: KeyAction
+    @Binding var output: String
     var body: some View {
-        GroupBox("Key: (key.label)") {
-            VStack(alignment: .leading, spacing: 12) {
-                TextField("Label", text: binding(\\.label))
-                    .textFieldStyle(.roundedBorder)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.subheadline.weight(.semibold))
+            Picker("Action", selection: $action) {
+                ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
+            }
+            if action == .text || action == .custom || action == .numbers || action == .symbols {
+                TextField("Text to insert", text: $output).textFieldStyle(.roundedBorder)
+            }
+        }
+    }
+}
 
-                TextField("Output", text: binding(\\.output))
-                    .textFieldStyle(.roundedBorder)
-
-                ActionEditor(title: "Tap action", action: binding(\\.action), output: binding(\\.output))
-
-                Divider()
-                Text("Long Press").font(.headline)
-                AlternateActionEditor(action: binding(\\.longPressAction), output: binding(\\.longPressOutput))
-
-                Divider()
-                Text("Swipe Actions").font(.headline)
-                SwipeActionEditor(direction: "↑", action: binding(\\.swipeUpAction), output: binding(\\.swipeUpOutput))
-                SwipeActionEditor(direction: "↓", action: binding(\\.swipeDownAction), output: binding(\\.swipeDownOutput))
-                SwipeActionEditor(direction: "←", action: binding(\\.swipeLeftAction), output: binding(\\.swipeLeftOutput))
-                SwipeActionEditor(direction: "→", action: binding(\\.swipeRightAction), output: binding(\\.swipeRightOutput))
-
-                Divider()
-                SliderRow(title: "Width", value: binding(\\.width), range: 0.4...8)
-                SliderRow(title: "Height", value: binding(\\.height), range: 0.5...3)
-                SliderRow(title: "Corner radius", value: binding(\\.cornerRadius), range: 0...35)
-                SliderRow(title: "Font size", value: binding(\\.fontSize), range: 8...40)
-                ColorRow(title: "Background", hex: binding(\\.backgroundHex))
-                ColorRow(title: "Text", hex: binding(\\.foregroundHex))
-                ColorRow(title: "Pressed", hex: binding(\\.pressedHex))
-                Toggle("Haptic feedback", isOn: binding(\\.haptic))
-                Toggle("Key sound", isOn: binding(\\.sound))
-
-                HStack {
-                    Button("Move Left") { store.moveKey(key.id, offset: -1) }
-                        .buttonStyle(.bordered)
-                    Button("Move Right") { store.moveKey(key.id, offset: 1) }
-                        .buttonStyle(.bordered)
+struct AlternateActionEditor: View {
+    @Binding var action: KeyAction?
+    @Binding var output: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle("Enabled", isOn: Binding(get: { action != nil }, set: { enabled in action = enabled ? .text : nil }))
+            if let actionBinding = Binding($action) {
+                Picker("Action", selection: actionBinding) {
+                    ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
                 }
-
-                HStack {
-                    Button("Move to Row Above") { store.moveKey(key.id, toRow: -1) }
-                        .buttonStyle(.bordered)
-                        .disabled(rowIndex == 0)
-                    Button("Move to Row Below") { store.moveKey(key.id, toRow: 1) }
-                        .buttonStyle(.bordered)
-                        .disabled(rowIndex == store.keyboard.rows.count - 1)
+                if actionBinding.wrappedValue == .text || actionBinding.wrappedValue == .custom || actionBinding.wrappedValue == .numbers || actionBinding.wrappedValue == .symbols {
+                    TextField("Text to insert", text: $output).textFieldStyle(.roundedBorder)
                 }
+            }
+        }
+    }
+}
 
-                HStack {
-                    Button("Duplicate") { store.duplicateKey(key.id) }
-                        .buttonStyle(.bordered)
-                    Button("Delete", role: .destructive) { store.deleteKey(key.id) }
-                        .buttonStyle(.bordered)
+struct SwipeActionEditor: View {
+    let direction: String
+    @Binding var action: KeyAction?
+    @Binding var output: String
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(direction).font(.title3).frame(width: 28)
+            VStack(alignment: .leading, spacing: 5) {
+                Toggle("Enabled", isOn: Binding(get: { action != nil }, set: { enabled in action = enabled ? .text : nil }))
+                if let actionBinding = Binding($action) {
+                    Picker("Action", selection: actionBinding) {
+                        ForEach(KeyAction.allCases) { Text($0.title).tag($0) }
+                    }
+                    if actionBinding.wrappedValue == .text || actionBinding.wrappedValue == .custom || actionBinding.wrappedValue == .numbers || actionBinding.wrappedValue == .symbols {
+                        TextField("Text to insert", text: $output).textFieldStyle(.roundedBorder)
+                    }
                 }
             }
         }
