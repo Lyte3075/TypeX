@@ -2,6 +2,8 @@
     <application
         android:theme="@style/AppTheme"
         android:label="TypeX"
+        android:icon="@drawable/typex_icon"
+        android:roundIcon="@drawable/typex_icon"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity
