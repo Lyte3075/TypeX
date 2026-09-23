@@ -189,33 +189,7 @@ struct KeyboardCanvas: View {
     var body: some View {
         VStack(spacing: store.keyboard.rowSpacing) {
             ForEach(store.keyboard.rows) { row in
-                GeometryReader { geometry in
-                    let unitWidth = calculatedUnitWidth(for: row, availableWidth: geometry.size.width)
-
-                    HStack(spacing: 0) {
-                        ForEach(row.keys) { key in
-                            Button { store.selectedKeyID = key.id } label: {
-                                Text(key.label)
-                                    .font(.system(size: key.fontSize, weight: key.fontWeight >= 700 ? .bold : .semibold))
-                                    .foregroundStyle(Color(hex: key.foregroundHex))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: store.keyboard.keyHeight * key.height)
-                                    .background(Color(hex: key.backgroundHex))
-                                    .clipShape(RoundedRectangle(cornerRadius: key.cornerRadius))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: key.cornerRadius)
-                                            .stroke(store.selectedKeyID == key.id ? Color(hex: store.keyboard.accentHex) : .clear, lineWidth: 2)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .frame(width: unitWidth * max(0.4, key.width))
-                            .padding(.horizontal, store.keyboard.keySpacing / 2 + key.horizontalSpacing)
-                            .padding(.vertical, key.verticalSpacing)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .frame(height: store.keyboard.keyHeight + row.keys.map { $0.verticalSpacing * 2 }.max() ?? 0)
+                KeyboardRowCanvas(row: row, store: store)
             }
         }
         .padding(9)
@@ -223,15 +197,58 @@ struct KeyboardCanvas: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.08)))
     }
+}
 
-    private func calculatedUnitWidth(for row: TypeXRow, availableWidth: CGFloat) -> CGFloat {
-        let totalWeight = row.keys.reduce(0.0) { total, key in
-            total + max(0.4, key.width)
+private struct KeyboardRowCanvas: View {
+    let row: TypeXRow
+    @ObservedObject var store: TypeXDesignerStore
+
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                ForEach(row.keys) { key in
+                    Button {
+                        store.selectedKeyID = key.id
+                    } label: {
+                        Text(key.label)
+                            .font(.system(size: CGFloat(key.fontSize), weight: key.fontWeight >= 700 ? .bold : .semibold))
+                            .foregroundStyle(Color(hex: key.foregroundHex))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: CGFloat(store.keyboard.keyHeight * key.height))
+                            .background(Color(hex: key.backgroundHex))
+                            .clipShape(RoundedRectangle(cornerRadius: CGFloat(key.cornerRadius)))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: CGFloat(key.cornerRadius))
+                                    .stroke(
+                                        store.selectedKeyID == key.id ? Color(hex: store.keyboard.accentHex) : .clear,
+                                        lineWidth: 2
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: width(for: key, in: geometry.size.width))
+                    .padding(.horizontal, CGFloat(store.keyboard.keySpacing / 2 + key.horizontalSpacing))
+                    .padding(.vertical, CGFloat(key.verticalSpacing))
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
-        let totalMargins = row.keys.reduce(0.0) { total, key in
-            total + store.keyboard.keySpacing + key.horizontalSpacing * 2
+        .frame(height: rowHeight)
+    }
+
+    private var rowHeight: CGFloat {
+        CGFloat(store.keyboard.keyHeight + (row.keys.map { $0.verticalSpacing * 2 }.max() ?? 0))
+    }
+
+    private func width(for key: TypeXKey, in availableWidth: CGFloat) -> CGFloat {
+        let totalWeight = row.keys.reduce(0.0) { total, item in
+            total + max(0.4, item.width)
         }
-        return max(1, availableWidth - totalMargins) / max(0.1, totalWeight)
+        let totalMargins = row.keys.reduce(0.0) { total, item in
+            total + store.keyboard.keySpacing + item.horizontalSpacing * 2
+        }
+        let unit = max(1, availableWidth - CGFloat(totalMargins)) / CGFloat(max(0.1, totalWeight))
+        return unit * CGFloat(max(0.4, key.width))
     }
 }
 
