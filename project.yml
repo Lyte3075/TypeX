@@ -7,7 +7,9 @@ options:
 
 settings:
   base:
-    SWIFT_VERSION: "5.0"\n    MARKETING_VERSION: "1.0.0"\n    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
 
 targets:
   TypeXApp:
