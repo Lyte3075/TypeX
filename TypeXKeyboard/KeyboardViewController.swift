@@ -51,7 +51,10 @@ final class KeyboardViewController: UIInputViewController {
                 let button = TypeXKeyButton()
                 button.configure(with: key)
                 button.onActivate = { [weak self] in self?.activate($0) }
-                button.onSwipe = { [weak self] _, output in self?.textDocumentProxy.insertText(output) }
+                button.onLongPress = { [weak self] in self?.activateLongPress($0) }
+                button.onSwipe = { [weak self] _, action, output in
+                    self?.perform(action: action, output: output)
+                }
                 rowStack.addArrangedSubview(button)
 
                 let ratio = CGFloat(max(0.4, key.width) / total)
@@ -66,9 +69,17 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func activate(_ button: TypeXKeyButton) {
-        switch button.actionName {
-        case "text", "custom", "numbers", "symbols":
-            insert(button.output, uppercase: isShifted)
+        perform(action: button.actionName, output: button.output)
+    }
+
+    private func activateLongPress(_ button: TypeXKeyButton) {
+        perform(action: button.longPressAction, output: button.longPressOutput)
+    }
+
+    private func perform(action: String, output: String) {
+        switch action {
+        case "", "text", "custom", "numbers", "symbols":
+            insert(output, uppercase: isShifted)
         case "backspace":
             textDocumentProxy.deleteBackward()
         case "space":
@@ -87,7 +98,7 @@ final class KeyboardViewController: UIInputViewController {
         case "emoji":
             textDocumentProxy.insertText("🙂")
         default:
-            insert(button.output, uppercase: isShifted)
+            insert(output, uppercase: isShifted)
         }
     }
 
@@ -130,20 +141,16 @@ final class KeyboardViewController: UIInputViewController {
         ]
 
         func key(_ s: String) -> TypeXExtensionKey {
-            TypeXExtensionKey(
-                label: s.uppercased(), output: s, width: 1, height: 1,
+            TypeXExtensionKey(label: s.uppercased(), output: s, width: 1, height: 1,
                 cornerRadius: 9, fontSize: 16, fontWeight: 600,
                 backgroundHex: "#171724", foregroundHex: "#FFFFFF",
-                pressedHex: "#635BFF", action: "text", haptic: true, sound: false,
-                longPressOutput: "", swipeUpOutput: "", swipeDownOutput: "",
-                swipeLeftOutput: "", swipeRightOutput: ""
-            )
+                pressedHex: "#635BFF", action: "text", haptic: true, sound: false)
         }
 
         let bottom = [
-            TypeXExtensionKey(label: "⌫", output: "", width: 1.4, height: 1, cornerRadius: 9, fontSize: 16, fontWeight: 600, backgroundHex: "#171724", foregroundHex: "#FFFFFF", pressedHex: "#635BFF", action: "backspace", haptic: true, sound: false, longPressOutput: "", swipeUpOutput: "", swipeDownOutput: "", swipeLeftOutput: "", swipeRightOutput: ""),
-            TypeXExtensionKey(label: "space", output: " ", width: 4.8, height: 1, cornerRadius: 9, fontSize: 15, fontWeight: 600, backgroundHex: "#171724", foregroundHex: "#FFFFFF", pressedHex: "#635BFF", action: "space", haptic: true, sound: false, longPressOutput: "", swipeUpOutput: "", swipeDownOutput: "", swipeLeftOutput: "", swipeRightOutput: ""),
-            TypeXExtensionKey(label: "↵", output: "\n", width: 1.4, height: 1, cornerRadius: 9, fontSize: 16, fontWeight: 600, backgroundHex: "#171724", foregroundHex: "#FFFFFF", pressedHex: "#635BFF", action: "returnKey", haptic: true, sound: false, longPressOutput: "", swipeUpOutput: "", swipeDownOutput: "", swipeLeftOutput: "", swipeRightOutput: "")
+            TypeXExtensionKey(label: "⌫", output: "", width: 1.4, height: 1, cornerRadius: 9, fontSize: 16, fontWeight: 600, backgroundHex: "#171724", foregroundHex: "#FFFFFF", pressedHex: "#635BFF", action: "backspace", haptic: true, sound: false),
+            TypeXExtensionKey(label: "space", output: " ", width: 4.8, height: 1, cornerRadius: 9, fontSize: 15, fontWeight: 600, backgroundHex: "#171724", foregroundHex: "#FFFFFF", pressedHex: "#635BFF", action: "space", haptic: true, sound: false),
+            TypeXExtensionKey(label: "↵", output: "\n", width: 1.4, height: 1, cornerRadius: 9, fontSize: 16, fontWeight: 600, backgroundHex: "#171724", foregroundHex: "#FFFFFF", pressedHex: "#635BFF", action: "returnKey", haptic: true, sound: false)
         ]
 
         return TypeXExtensionKeyboard(
@@ -153,7 +160,6 @@ final class KeyboardViewController: UIInputViewController {
             accentHex: "#635BFF", keyPressedHex: "#3D36A8", rowSpacing: 6, keySpacing: 5,
             keyHeight: 42, cornerRadius: 9, fontSize: 16, keyboardHeight: 260, opacity: 1,
             haptics: true, sounds: false, autoCapitalize: true, doubleSpacePeriod: true,
-            smartQuotes: true, smartDashes: true
-        )
+            smartQuotes: true, smartDashes: true)
     }
 }
