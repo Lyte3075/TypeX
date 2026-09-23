@@ -1,0 +1,107 @@
+name: TypeX Release Publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, for example 1.0.1"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark this release as a pre-release"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish TypeX release
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -e
+          python3 - <<'PY'
+          import os, re
+          version = os.environ["VERSION"].strip().lstrip("v")
+          if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+              raise SystemExit("Version must look like 1.2.3")
+          for path in ["project.yml", "android/app/build.gradle.kts"]:
+              text = open(path, encoding="utf-8").read()
+              if path == "project.yml":
+                  text = re.sub(r'MARKETING_VERSION: "[^"]+"', f'MARKETING_VERSION: "{version}"', text)
+              else:
+                  text = re.sub(r'versionName = "[^"]+"', f'versionName = "{version}"', text)
+              open(path, "w", encoding="utf-8").write(text)
+          PY
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add project.yml android/app/build.gradle.kts
+          git diff --cached --quiet || git commit -m "Release v${VERSION}"
+          git push
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned iOS app
+        run: |
+          set -e
+          xcodebuild -project TypeX.xcodeproj -scheme TypeXApp -configuration Release -sdk iphoneos -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" clean build
+
+      - name: Package iOS IPA
+        run: |
+          set -e
+          PRODUCTS_DIR="build/ios/Build/Products/Release-iphoneos"
+          APP_PATH="$PRODUCTS_DIR/TypeX.app"
+          if [ ! -d "$APP_PATH" ]; then
+            APP_PATH="$(find "$PRODUCTS_DIR" -maxdepth 1 -type d -name "*.app" -print -quit)"
+          fi
+          test -n "$APP_PATH"
+          rm -rf build/ipa
+          mkdir -p build/ipa/Payload
+          cp -R "$APP_PATH" build/ipa/Payload/TypeX.app
+          cd build/ipa
+          /usr/bin/zip -qry "../TypeX-iOS-unsigned.ipa" Payload
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Build Android APK
+        working-directory: android
+        run: gradle --no-daemon assembleDebug
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -e
+          ARGS=( "v${VERSION}" "build/TypeX-iOS-unsigned.ipa" "android/app/build/outputs/apk/debug/app-debug.apk" --title "TypeX v${VERSION}" --generate-notes )
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            ARGS+=(--prerelease)
+          fi
+          gh release create "${ARGS[@]}"
