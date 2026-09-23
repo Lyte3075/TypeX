@@ -58,13 +58,14 @@ struct ContentView: View {
         case .layout: LayoutPanel(store: store)
         case .keys: KeyPanel(store: store)
         case .behavior: BehaviorPanel(store: store)
-        case .themes: ThemePanel(store: store)\n        case .updates: UpdatesPanel()
+        case .themes: ThemePanel(store: store)
+        case .updates: UpdatesPanel()
         }
     }
 }
 
 enum DesignerSection: String, CaseIterable, Identifiable {
-    case design, layout, keys, behavior, themes
+    case design, layout, keys, behavior, themes, updates
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
 }
@@ -80,7 +81,7 @@ struct UpdatesPanel: View {
                     HStack {
                         Label("Installed", systemImage: "checkmark.circle")
                         Spacer()
-                        Text("v\\(versionManager.currentVersion)")
+                        Text("v\(versionManager.currentVersion)")
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                     }
