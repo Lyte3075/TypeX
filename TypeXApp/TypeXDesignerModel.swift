@@ -144,7 +144,7 @@ final class TypeXDesignerStore: ObservableObject {
     func deleteRow(_ id: UUID) {
         guard keyboard.rows.count > 1 else { return }
         keyboard.rows.removeAll { $0.id == id }
-        if let selected = selectedKeyID, !keyboard.rows.flatMap(\\.keys).contains(where: { $0.id == selected }) {
+        if let selected = selectedKeyID, !keyboard.rows.flatMap(\.keys).contains(where: { $0.id == selected }) {
             selectedKeyID = nil
         }
     }
