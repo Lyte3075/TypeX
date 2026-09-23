@@ -185,26 +185,42 @@ struct UpdatesPanel: View {
 
 struct KeyboardCanvas: View {
     @ObservedObject var store: TypeXDesignerStore
+
     var body: some View {
         VStack(spacing: store.keyboard.rowSpacing) {
             ForEach(store.keyboard.rows) { row in
-                HStack(spacing: store.keyboard.keySpacing) {
-                    ForEach(row.keys) { key in
-                        Button { store.selectedKeyID = key.id } label: {
-                            Text(key.label)
-                                .font(.system(size: key.fontSize, weight: key.fontWeight >= 700 ? .bold : .semibold))
-                                .foregroundStyle(Color(hex: key.foregroundHex))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: store.keyboard.keyHeight * key.height)
-                                .background(Color(hex: key.backgroundHex))
-                                .clipShape(RoundedRectangle(cornerRadius: key.cornerRadius))
-                                .overlay(RoundedRectangle(cornerRadius: key.cornerRadius)
-                                    .stroke(store.selectedKeyID == key.id ? Color(hex: store.keyboard.accentHex) : .clear, lineWidth: 2))
-                        }
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: .infinity)
+                GeometryReader { geometry in
+                    let totalWeight = max(0.1, row.keys.reduce(0) { $0 + max(0.4, $1.width) })
+                    let totalMargins = row.keys.reduce(0.0) {
+                        $0 + store.keyboard.keySpacing + $1.horizontalSpacing * 2
                     }
+                    let availableWidth = max(1, geometry.size.width - totalMargins)
+                    let unitWidth = availableWidth / totalWeight
+
+                    HStack(spacing: 0) {
+                        ForEach(row.keys) { key in
+                            Button { store.selectedKeyID = key.id } label: {
+                                Text(key.label)
+                                    .font(.system(size: key.fontSize, weight: key.fontWeight >= 700 ? .bold : .semibold))
+                                    .foregroundStyle(Color(hex: key.foregroundHex))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: store.keyboard.keyHeight * key.height)
+                                    .background(Color(hex: key.backgroundHex))
+                                    .clipShape(RoundedRectangle(cornerRadius: key.cornerRadius))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: key.cornerRadius)
+                                            .stroke(store.selectedKeyID == key.id ? Color(hex: store.keyboard.accentHex) : .clear, lineWidth: 2)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .frame(width: unitWidth * max(0.4, key.width))
+                            .padding(.horizontal, store.keyboard.keySpacing / 2 + key.horizontalSpacing)
+                            .padding(.vertical, key.verticalSpacing)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
+                .frame(height: store.keyboard.keyHeight + row.keys.map { $0.verticalSpacing * 2 }.max() ?? 0)
             }
         }
         .padding(9)
@@ -352,6 +368,8 @@ struct KeyPanel: View {
                         Divider()
                         SliderRow(title: "Width", value: Binding(get: { store.selectedKey?.width ?? 1 }, set: { value in store.updateSelectedKey { $0.width = value } }), range: 0.4...8)
                         SliderRow(title: "Height", value: Binding(get: { store.selectedKey?.height ?? 1 }, set: { value in store.updateSelectedKey { $0.height = value } }), range: 0.5...3)
+                        SliderRow(title: "Horizontal spacing", value: Binding(get: { store.selectedKey?.horizontalSpacing ?? 0 }, set: { value in store.updateSelectedKey { $0.horizontalSpacing = value } }), range: 0...20)
+                        SliderRow(title: "Vertical spacing", value: Binding(get: { store.selectedKey?.verticalSpacing ?? 0 }, set: { value in store.updateSelectedKey { $0.verticalSpacing = value } }), range: 0...20)
                         SliderRow(title: "Corner radius", value: Binding(get: { store.selectedKey?.cornerRadius ?? 10 }, set: { value in store.updateSelectedKey { $0.cornerRadius = value } }), range: 0...35)
                         SliderRow(title: "Font size", value: Binding(get: { store.selectedKey?.fontSize ?? 16 }, set: { value in store.updateSelectedKey { $0.fontSize = value } }), range: 8...40)
                         ColorRow(title: "Background", hex: Binding(get: { store.selectedKey?.backgroundHex ?? "#171724" }, set: { value in store.updateSelectedKey { $0.backgroundHex = value } }))
