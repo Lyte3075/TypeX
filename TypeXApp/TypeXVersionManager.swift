@@ -81,8 +81,8 @@ final class TypeXVersionManager: ObservableObject {
     }
 
     private func compareVersions(_ lhs: String, _ rhs: String) -> ComparisonResult {
-        let left = lhs.split(separator: ".").map { Int($0.filter(.isNumber)) ?? 0 }
-        let right = rhs.split(separator: ".").map { Int($0.filter(.isNumber)) ?? 0 }
+        let left = lhs.split(separator: ".").map { Int(String($0.filter { $0.isNumber })) ?? 0 }
+        let right = rhs.split(separator: ".").map { Int(String($0.filter { $0.isNumber })) ?? 0 }
         for i in 0..<max(left.count, right.count) {
             let a = i < left.count ? left[i] : 0
             let b = i < right.count ? right[i] : 0
