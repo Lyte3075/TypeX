@@ -16,10 +16,17 @@ struct TypeXKey: Identifiable, Codable, Equatable {
     var action: KeyAction = .text
     var haptic: Bool = true
     var sound: Bool = true
+
+    // Optional so older exported JSON files remain compatible.
+    var longPressAction: KeyAction? = nil
     var longPressOutput: String = ""
+    var swipeUpAction: KeyAction? = nil
     var swipeUpOutput: String = ""
+    var swipeDownAction: KeyAction? = nil
     var swipeDownOutput: String = ""
+    var swipeLeftAction: KeyAction? = nil
     var swipeLeftOutput: String = ""
+    var swipeRightAction: KeyAction? = nil
     var swipeRightOutput: String = ""
 }
 
@@ -96,7 +103,6 @@ final class TypeXDesignerStore: ObservableObject {
 
     init() {
         let sharedDefaults = UserDefaults(suiteName: appGroupID)
-
         if let data = sharedDefaults?.data(forKey: storageKey),
            let saved = try? JSONDecoder().decode(TypeXKeyboard.self, from: data) {
             keyboard = saved
@@ -117,12 +123,7 @@ final class TypeXDesignerStore: ObservableObject {
 
     func save() {
         guard let data = try? JSONEncoder().encode(keyboard) else { return }
-
-        // Keep the designer working even before the App Group entitlement exists.
         UserDefaults.standard.set(data, forKey: storageKey)
-
-        // Once the app and keyboard extension share this App Group, the extension
-        // can immediately consume the same live configuration.
         UserDefaults(suiteName: appGroupID)?.set(data, forKey: storageKey)
     }
 
@@ -141,7 +142,7 @@ final class TypeXDesignerStore: ObservableObject {
     }
 
     func deleteRow(_ id: UUID) {
-        keyboard.rows.removeAll { $0.id == id }
+        keyboard.rows.removeAll { $0.id != id }
         if keyboard.rows.isEmpty { addRow() }
         selectedKeyID = nil
     }
