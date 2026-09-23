@@ -58,7 +58,7 @@ struct ContentView: View {
         case .layout: LayoutPanel(store: store)
         case .keys: KeyPanel(store: store)
         case .behavior: BehaviorPanel(store: store)
-        case .themes: ThemePanel(store: store)
+        case .themes: ThemePanel(store: store)\n        case .updates: UpdatesPanel()
         }
     }
 }
@@ -69,7 +69,119 @@ enum DesignerSection: String, CaseIterable, Identifiable {
     var title: String { rawValue.capitalized }
 }
 
-struct KeyboardCanvas: View {
+
+struct UpdatesPanel: View {
+    @StateObject private var versionManager = TypeXVersionManager()
+
+    var body: some View {
+        VStack(spacing: 12) {
+            GroupBox("TypeX Updates") {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Installed", systemImage: "checkmark.circle")
+                        Spacer()
+                        Text("v\\(versionManager.currentVersion)")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+
+                    if let latest = versionManager.latestRelease {
+                        HStack(alignment: .top) {
+                            Label("Latest", systemImage: versionManager.hasUpdate ? "arrow.down.circle.fill" : "checkmark.seal.fill")
+                            Spacer()
+                            VStack(alignment: .trailing) {
+                                Text(latest.displayVersion).font(.headline)
+                                Text(latest.name).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if versionManager.hasUpdate {
+                            Button {
+                                versionManager.open(latest)
+                            } label: {
+                                Label("Get Latest Update", systemImage: "arrow.down.circle.fill")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        } else {
+                            Text("You're running the newest release available on GitHub.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Check GitHub for the newest TypeX release.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button {
+                        Task { await versionManager.refresh() }
+                    } label: {
+                        Label(versionManager.isLoading ? "Checking..." : "Check for Updates",
+                              systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(versionManager.isLoading)
+                }
+            }
+
+            GroupBox("Version History") {
+                if versionManager.releases.isEmpty {
+                    Text("No releases loaded yet. Tap Check for Updates.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(versionManager.releases) { release in
+                            Button {
+                                versionManager.open(release)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(release.name).foregroundStyle(.primary)
+                                        Text(release.displayVersion)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if release.displayVersion == versionManager.currentVersion {
+                                        Text("Installed")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.secondary)
+                                    } else if release.prerelease {
+                                        Text("Pre-release")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+
+            if let error = versionManager.errorMessage {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+
+            Text("iOS note: TypeX can check releases and open the selected GitHub release. Installing an iOS build still depends on Apple's supported distribution/signing method.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .task {
+            await versionManager.refresh()
+        }
+    }
+}
+\nstruct KeyboardCanvas: View {
     @ObservedObject var store: TypeXDesignerStore
     var body: some View {
         VStack(spacing: store.keyboard.rowSpacing) {
