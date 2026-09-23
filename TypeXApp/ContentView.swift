@@ -182,7 +182,8 @@ struct UpdatesPanel: View {
         }
     }
 }
-\nstruct KeyboardCanvas: View {
+
+struct KeyboardCanvas: View {
     @ObservedObject var store: TypeXDesignerStore
     var body: some View {
         VStack(spacing: store.keyboard.rowSpacing) {
